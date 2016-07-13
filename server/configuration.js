@@ -1,3 +1,5 @@
+var chalk = require('chalk');
+
 var parameters =
   { activeEnvironment : 'local',  // "local" or "remote"
     environment: {
@@ -33,9 +35,9 @@ var parameters =
   };
 
   function setupConfig() {
-    console.log('-------------------------------');
-    console.log('Connecting to ' + parameters.activeEnvironment + ' environment');
-    console.log('-------------------------------');
+    console.log('--------------------------------');
+    console.log('Connecting to ' + chalk.green(parameters.activeEnvironment) + ' environment');
+    console.log('--------------------------------');
     if (parameters.activeEnvironment === 'local') {
       return parameters.environment.local;
     } else {

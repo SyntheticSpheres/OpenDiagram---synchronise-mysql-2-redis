@@ -1,39 +1,38 @@
 var servers = require('./servers.js');
 var utilities = require('./utilities.js');
+var synchroMap = require('../model/synchro-map.js');
 var moment = require('moment');
 
 var dbSql = servers.mySqlInit();
 var dbRedis;
-var res;
+// var res;
 
 servers.redisInit(startSynchornization);
 
 // Start Synchronisation
 function startSynchornization(redis) {
   dbRedis = redis;
-  console.log('-------------------------------');
-  console.log('--START-Redis-SYNCHRONIZATION--');
-  console.log('-------------------------------');
-  mySqlQuery("SELECT * FROM odmetax.metaindex_semantic;", xyz);
+  console.log('--------------------------------');
+  console.log('--START-Redis-SYNCHRONIZATION---');
+  console.log('--------------------------------');
+  synchroMap.forEach(function(map) {
+    // Asynchronous synchronization
+    // setTimeout(function() {
+      mySqlQuery(map.query, map.callback, dbRedis);
+    // }, 100);
+  });
+  console.log('END of Mapping Submission');
 }
 
 // Execute Query on MetaX
-function mySqlQuery(query, cb) {
+function mySqlQuery(query, cb, dbRedis) {
   try {
-    res = servers.mySqlQuery(dbSql, query ,cb);
-    // console.log(res);
+    var res = servers.mySqlQuery(dbSql, query ,cb ,dbRedis);
   } catch (err) {
     utilities.logError({"mySQLQuery" : "Can't execute", "Error: " : err});
   }
 }
 
-function xyz(ret) {
-  // console.log(ret);
-  console.log('finish');
-  console.log(ret[0]);
-  utilities.log({Query : "s", status : "done"});
-
-}
 
 function synchronise(servers) {
   var res;
@@ -75,14 +74,8 @@ function synchronise(servers) {
   });
 }
 
-// console.log('GO');
-// synchronise();
-
-
-// Promise.all([function1, function2]).then({...}) where function1 and function2 have
-// return request({...})
-
-
 // Close all Connections
-// servers.dbSQL.end();
-// redisConnection.quit();
+function closeConnections(mySqlConnection, redisConnection) {
+  mySqlConnection.end();
+  redisConnection.quit();
+}

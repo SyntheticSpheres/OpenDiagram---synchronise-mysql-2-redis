@@ -17,21 +17,18 @@ module.exports = {
     utilities.log({"INIT: ": "Created mySql connection pool"});
     return pool;
   }),
-  mySqlQuery : (function mySqlQuery(pool, query,cb) {  //MetaX Query Call
+  mySqlQuery : (function mySqlQuery(pool, query, cb, dbRedis) {  //MetaX Query Call
     pool.getConnection(function(err,connection){
       if (err) {
         connection.release();
         utilities.logError({"code" : 100, "status" : "Error in connection database"});
         return;
       }
-      console.log('query = ' + query);
-      console.log('connected as id ' + connection.threadId);
-      console.log('cb ? ' + typeof(cb));
       connection.query(query, function(err,rows){
         connection.release();
         if(!err) {
           utilities.log({"Query" : query, "status" : (rows.length.toString() + " rows")});
-          cb(rows);
+          cb(rows, dbRedis);
         }
       });
 
