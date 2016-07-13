@@ -18,7 +18,7 @@ function startSynchornization(redis) {
   synchroMap.forEach(function(map) {
     // Asynchronous synchronization
     // setTimeout(function() {
-      mySqlQuery(map.query, map.callback, dbRedis);
+      mySqlQuery(map.query, map.callback, redis);
     // }, 100);
   });
   utilities.log({SYNC : "Submit all synchronization maps", status : "done"}, 'f');
