@@ -21,7 +21,7 @@ function startSynchornization(redis) {
       mySqlQuery(map.query, map.callback, dbRedis);
     // }, 100);
   });
-  console.log('END of Mapping Submission');
+  utilities.log({SYNC : "Submit all synchronization maps", status : "done"}, 'f');
 }
 
 // Execute Query on MetaX

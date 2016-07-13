@@ -2,9 +2,12 @@ var app = require('../server/app.js');
 var utilities = require('../server/utilities.js');
 
 function redis_semantics(res, dbRedis) {
+
+// console.log(dbRedis);
+
   res.forEach(function(row) {
     console.log('RPUSH ' + row.semantics);
-    // dbRedis.rpush("semantics:" + row.sId, row.semantics, redis.print);
+    // dbRedis.redisClient.rpush("semantics:" + row.sId, row.semantics, redis.print);
   });
   utilities.log({SYNC : "redis_semantic", status : "synchronized " + res.length.toString() + " records"}, 'f');
 }

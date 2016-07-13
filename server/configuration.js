@@ -2,6 +2,7 @@ var chalk = require('chalk');
 
 var parameters =
   { activeEnvironment : 'local',  // "local" or "remote"
+    logToFile : false, // true or false
     environment: {
       local: {
         mySQL: {
@@ -35,13 +36,18 @@ var parameters =
   };
 
   function setupConfig() {
+    var param;
     console.log('--------------------------------');
     console.log('Connecting to ' + chalk.green(parameters.activeEnvironment) + ' environment');
     console.log('--------------------------------');
     if (parameters.activeEnvironment === 'local') {
-      return parameters.environment.local;
+      param = parameters.environment.local;
+      param.logToFile = parameters.logToFile;
+      return param;
     } else {
-      return parameters.environment.remote;
+      param = parameters.environment.remote;
+      param.logToFile = parameters.logToFile;
+      return param;
     }
   }
 
