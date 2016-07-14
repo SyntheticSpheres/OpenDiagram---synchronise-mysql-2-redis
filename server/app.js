@@ -1,19 +1,20 @@
 var servers = require('./servers.js');
 var utilities = require('./utilities.js');
 var synchroMap = require('../model/synchro-map.js');
+var config = require('./configuration.js');
 var moment = require('moment');
 
 var dbSql = servers.mySqlInit();
 var dbRedis;
 // var res;
 
-servers.redisInit(startSynchornization);
+servers.redisInit(startSynchronization);
 
 // Start Synchronisation
-function startSynchornization(redis) {
+function startSynchronization(redis) {
   dbRedis = redis;
   console.log('--------------------------------');
-  console.log('--START-Redis-SYNCHRONIZATION---');
+  console.log('--mySql>Redis-SYNCHRONIZATION---');
   console.log('--------------------------------');
   synchroMap.forEach(function(map) {
     // Asynchronous synchronization
@@ -21,7 +22,10 @@ function startSynchornization(redis) {
       mySqlQuery(map.query, map.callback, redis);
     // }, 100);
   });
-  utilities.log({SYNC : "Submit all synchronization maps", status : "done"}, 'f');
+  setTimeout(function() {
+    nextSynchro(redis,synchroMap.length);
+  }, config.parameters.redisRefresh);
+  utilities.log({SYNC : "Submited all synchronization maps", status : "done"}, 'f');
 }
 
 // Execute Query on MetaX
@@ -33,49 +37,38 @@ function mySqlQuery(query, cb, dbRedis) {
   }
 }
 
-
-function synchronise(servers) {
-  var res;
-
-  console.log('servers.dbSQL = ' + typeof(servers.dbSQL));
-
-  // servers.dbSQL.query('SELECT `Semantic Name` AS "semantics" FROM MetaIndex_Semantic WHERE `Semantic Category ID` = 1000 ORDER BY `Semantic Name`', function(err, rows, fields) {
-  //   if (err) throw err;
-  //   rowCount = rows.length;
-  //   console.log(rowCount + ' rows are returned');
-  //   rows.forEach( function(row) {
-  //     console.log('RPUSH ' + row.semantics);
-  //     servers.dbRedis.rpush("semantics:" + row.sId, row.semantics, redis.print);
-  //   });
-  //   return 0;
-  // });
-
-
-
-
-  // Synchronise FILTER LIST
-  res = new Promise(function(resolve, reject) {
-    console.log('servers.dbSQL = ' + typeOf(servers.dbSQL));
-
-    servers.dbSQL.query('SELECT `Semantic Name` AS "semantics" FROM MetaIndex_Semantic WHERE `Semantic Category ID` = 1000 ORDER BY `Semantic Name`', function(err, rows, fields) {
-      if (err) throw err;
-      rowCount = rows.length;
-      console.log(rowCount + ' rows are returned');
-      rows.forEach( function(row) {
-        console.log('RPUSH ' + row.semantics);
-        servers.dbRedis.rpush("semantics:" + row.sId, row.semantics, redis.print);
-      });
-      return 0;
-    });
-  }).then(function(cb) {
-    servers.dbRedis.quit();
-    servers.dbSQL.end();
-    console.log('Server Connection closed');
+function nextSynchro(redis,tasksCount){  //Wait for next Synchronisation
+  redis.get("synchronization_tasks",function(err, tasksDone) {
+    if(tasksDone == tasksCount) {
+      redis.get("signal_stop",function(err, stopSignal) {
+            if(err) {
+              utilities.logError({"Signal to Stop" : "Can't execute", "Error: " : err});
+            } else {
+              if (stopSignal == 'false') {
+                utilities.log({SYNC : "WAIT", status : "wait for next synchronization... "}, 'w');
+                setTimeout(function() {
+                  redis.set("synchronization_tasks",0);
+                  startSynchronization(redis);
+                }, config.parameters.redisRefresh);
+              } else {
+                utilities.log({SYNC : "STOP", status : "RECEIVED SIGNAL TO STOP"}, 'q');
+                closeConnections(dbSql, redis);
+              }
+            }
+          });
+    } else {
+      utilities.log({SYNC : "Waiting to finish all tasks", status : "done"}, 'w');
+      setTimeout(function() {
+        nextSynchro(redis,tasksCount);
+      }, config.parameters.redisRefresh);
+    }
   });
 }
+
 
 // Close all Connections
 function closeConnections(mySqlConnection, redisConnection) {
   mySqlConnection.end();
   redisConnection.quit();
+  utilities.log({SYNC : "STOP", status : "All Connections are closed, can't wait to start again :)"}, 'q');
 }

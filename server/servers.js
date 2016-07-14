@@ -1,4 +1,4 @@
-var config = require('./configuration.js');
+var config = require('./configuration.js').setupConfig();
 var mysql = require('mysql');
 var redis = require('redis');
 var utilities = require('./utilities.js');
@@ -6,13 +6,13 @@ var utilities = require('./utilities.js');
 module.exports = {
   mySqlInit : (function mysqlInit() {  // MetaX - Semantic DB Connection
     var pool = mysql.createPool({
-      connectionLimit : 100, //important
+      connectionLimit : config.mySQLconnectionLimit, //important
       host     : config.mySQL.host,
       user     : config.mySQL.user,
       password : config.mySQL.password,
-      database : config.mySQL.databsse,
+      database : config.mySQL.database,
       port     : config.mySQL.port,
-      debug    : false
+      debug    : config.mySQL.debug
     });
     utilities.log({"INIT: ": "Created mySql connection pool"});
     return pool;
@@ -21,7 +21,7 @@ module.exports = {
     pool.getConnection(function(err,connection){
       if (err) {
         connection.release();
-        utilities.logError({"code" : 100, "status" : "Error in connection database"});
+        utilities.logError({"CONNECTION" : "mySQL", "status" : "Error in connection database"});
         return;
       }
       connection.query(query, function(err,rows){
@@ -31,9 +31,8 @@ module.exports = {
           cb(rows, dbRedis);
         }
       });
-
       connection.on('error', function(err) {
-        utilities.logError({"code" : 100, "status" : "Error in connection database"});
+        utilities.logError({"CONNECTION" : "mySQL", "status" : "Error in connection database"});
         return;
       });
     });
@@ -43,13 +42,21 @@ module.exports = {
 
       redisConnection.auth(config.redis.password, function() {
         utilities.log({"INIT: " : "Redis client connected"});
-        redisConnection.flushall( function() {
-          utilities.log({"INIT: " : "Redis Flushed"});
-          cb(redisConnection);
-        });
+        setTimeout(function() {
+          redisConnection.set("signal_stop","false");
+        }, config.redisRefresh);
+        redisConnection.set("synchronization_tasks",0);
+        if (config.redisFlush) {
+          redisConnection.flushall( function() {
+            utilities.log({"INIT: " : "Redis Flushed"});
+            cb(redisConnection);
+          });
+        } else {
+            cb(redisConnection);
+        }
       });
       redisConnection.on("error", function (err) {
-        utilities.logError({"code" : 600, "status" : "Redis Error"});
+        utilities.logError({"CONNECTION" : "Redis", "status" : "Redis Error"});
           return(err);
     });
   })

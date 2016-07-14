@@ -9,8 +9,8 @@ var log_stdout = process.stdout;
 
 
 module.exports = {
-  log : function(txt, type = 's') {  // type: s = status , f = finished
-    if(config.logToFile) {
+  log : function(txt, type = 's') {  // type: s = status , w = wait , f = finished operation , q = quit
+    if(config.parameters.logToFile) {
       console.log = function(txt) { //
         log_file.write(util.format(txt) + '\n');
         log_stdout.write(util.format(txt) + '\n');
@@ -20,8 +20,14 @@ module.exports = {
       case 's':
         console.log(chalk.green(moment().format('MMMM Do YYYY, h:mm:ss a') + JSON.stringify(txt)));
         break;
-      case 'f':
+      case 'w':
         console.log(chalk.blue(moment().format('MMMM Do YYYY, h:mm:ss a') + JSON.stringify(txt)));
+        break;
+      case 'f':
+        console.log(chalk.white.bgBlue(moment().format('MMMM Do YYYY, h:mm:ss a') + JSON.stringify(txt)));
+        break;
+      case 'q':
+        console.log(chalk.black.bgWhite(moment().format('MMMM Do YYYY, h:mm:ss a') + JSON.stringify(txt)));
         break;
     }
   },
