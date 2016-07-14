@@ -63,6 +63,16 @@ function redis_author(res, dbRedis) {
   utilities.log({SYNC : "redis_authors", status : "synchronized " + res.length.toString() + " records"}, 'f');
 }
 
+// Synchronization: Public and Published Diagrams (Redis SET + Hashes)
+function redis_public_and_published_diagram(res, dbRedis) {
+  var redis = dbRedis;
+  res.forEach(function(row) {
+    redis.hmset("diagram:"+row.dId, "author id", row.aId,"diagram name", row.dName, "diagram description", row.dDescription, "diagram status", row.dStatus);
+    redis.sadd("diagrams", row.dId, redis.print);
+  });
+  synchronizationTasksDone(redis);
+  utilities.log({SYNC : "redis_diagrams", status : "synchronized " + res.length.toString() + " records"}, 'f');
+}
 
 function synchronizationTasksDone(redis) {
   redis.incr("synchronization_tasks");
@@ -79,5 +89,8 @@ module.exports = [
   },{
     query : 'SELECT `Composition ID` AS "aId", `Composition First Name` AS "fName" , `Composition Last Name` AS "lName" , `Composition Address` AS "address" FROM pattern_composition ORDER BY `Composition ID` , `Composition Last Name` , `Composition First Name`;',
     callback : redis_author
+  },{
+    query : 'SELECT D2. `Composition ID` AS "aId",  D1. `Member ID` AS "dId", D1.`Member Name` AS "dName", IFNULL(D1.`Member Description`,"") AS "dDescription", IFNULL(D1.`Member Status ID`,"") AS "dStatus" FROM `odmetax`.`Pattern_Composition_Members` D2, `odmetax`.`Pattern_Composition_Members_Detail` D1 WHERE D2.`Member ID` = D1.`Member ID` ORDER BY D1.`Member Name`;',
+    callback : redis_public_and_published_diagram
   }
 ];
