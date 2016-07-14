@@ -1,4 +1,4 @@
-# opendiagram-synchronise-mysql-2-redis
+# opendiagram-[sm2r]-synchronise-mysql-2-redis
 Node.js server to synchronise data between MetaX and Redis for lightning fast access to MetaX Semantics
 
 **Intended use:**
@@ -18,4 +18,4 @@ Configuration of Servers and overall behavior is accessible  via configuration.j
 **Stop:**
 Server runs in terminal window. There are two ways to stop synchronization server:
 A. This option enables to stop server remotely: Connect to Redis DB and change "signal_stop" key to "true"
-B. This is local only option: Press Ctrl+C
+B. This is local only option: Press Ctrl+C 
